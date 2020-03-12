@@ -1,0 +1,132 @@
+# Commands for preparing sequencing data.
+#>
+	#>
+		#>
+1			#> #Make a new folder named after the HiSeq run 
+		#>
+	#>
+#>
+mkdir /ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168
+
+
+#>
+	#>
+		#>
+2			#>  Find all the fastq.gz file paths in the raw data and create a link to it.
+		#>
+	#>
+#>
+cd /ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168
+for i in $( find /ebio/abt6_sra/years/2020/02_26/ampliconsequencing/illumina_ST-J00101_flowcellA_SampleId*  | grep 'fastq\.gz' )
+do 
+echo $i
+ln -s $i
+done
+
+#copy actual R1 files to processed data
+mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+#mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/lane1
+#mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/lane2
+processed=/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+for i in $( ls *_L00*_R1_* )
+do 
+    echo $i
+    i2=$(sed "s/.gz//g" <(echo $i))
+    zcat $i > "$processed"/$i2
+done
+
+
+#Trim off primers
+for i in *fastq
+do
+    echo $i
+    qsub -N "$i" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/HiSeqTrim_LOAD.sh $i
+done
+
+mkdir trimmedFASTQ
+mv *_515F_GI502F.fastq trimmedFASTQ
+
+mkdir FASTQ
+mv *.fastq FASTQ
+
+
+#Quality filter
+cd trimmedFASTQ
+for i in *fastq
+do
+qsub -N "$i" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/MiSeqQualityFilter.sh $i 
+done
+rm *trash
+
+processed=/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+mkdir "$processed"/FASTA_trimmed
+mv *filtered.fa "$processed"/FASTA_trimmed
+
+
+#put sample, lane, and read1 all in the same block of text
+rename "s/_S/S/" *
+rename "s/_L/L/" *
+rename "s/_R/R/" *
+# "D7S52L001R1"
+
+
+
+#rename each sequence so it reflects the name of the fasta file
+for i in *fastq_filtered.fa
+do
+    #echo $i
+    i2=$(sed "s/_001.fastq_filtered.fa//g" <(echo $i))
+    echo $i2
+    sed -i "s/^>[A-Z][0-9]*\./>"$i2"./" $i 
+done
+
+
+#combine all the FASTA files into one big file
+rm HiSeq0168_all_trimmed.fasta
+for i in $(ls *filtered.fa)
+do 
+echo $i
+cat $i >> HiSeq0168_all_trimmed.fasta
+done
+
+mkdir -p $processed/OTUs_trimmed
+mv HiSeq0168_all_trimmed.fasta $processed/OTUs_trimmed
+
+cd "$processed"/OTUs_trimmed
+
+# Find unique read sequences and abundances
+vsearch=/ebio/abt6_projects7/bacterial_strain_analysis/code/vsearch-2.4.3/vsearch-2.4.3-linux-x86_64/bin/vsearch
+nice -12 $vsearch --derep_fulllength HiSeq0168_all_trimmed.fasta --sizeout --output HiSeq0168_all_trimmed_uniques.fa
+
+
+#cluster OTUS and filter chimeras
+usearch=/ebio/abt6_projects7/bacterial_strain_analysis/code/usearch10
+nice -12 $usearch -unoise3 HiSeq0168_all_trimmed_uniques.fa -zotus HiSeq0168_all_trimmed_zotus.fa -tabbedout HiSeq0168_all_trimmed_unoise3.txt
+
+sed -i -e 's/Zotu/Otu/g' HiSeq0168_all_trimmed_zotus.fa
+
+/ebio/abt6_projects7/bacterial_strain_analysis/code/TACO_make_otus.sh
+
+#fullfasta=HiSeq0168_all_trimmed.fasta
+#otus=HiSeq0168_all_zotus.fa
+#tablename=/ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168/OTUs/Load_HiSeq_20200226.txt
+#tablename=Load_HiSeq_20200226.txt
+#qsub -N "p341" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/makeOTUtable515.sh $fullfasta $otus $tablename
+
+
+#assign taxonomy by USEARCH
+refdb=/ebio/abt6_projects7/bacterial_strain_analysis/data/16S_db/RDP/rdp_16s_v16.udb 
+usearch=/ebio/abt6_projects7/bacterial_strain_analysis/code/usearch10
+nice -12 $usearch -sintax HiSeq0168_all_trimmed_zotus.fa -db $refdb -strand both -tabbedout HiSeq0168_all_trimmed.tax -sintax_cutoff 0.8
+
+
+scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/Load_HiSeq_20200228.txt /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
+scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/HiSeq0168_all_trimmed.tax  /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
+scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/HiSeq0168_all_trimmed_zotus.fa  /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
+
+
+Load_HiSeq_20200227.txt
+
+
+
+
