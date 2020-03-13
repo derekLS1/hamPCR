@@ -1,4 +1,10 @@
 # Commands for preparing sequencing data.
+
+raw_data_folder=/ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168
+short_read_archive=/ebio/abt6_sra/years/2020/02_26/ampliconsequencing
+processed_data_folder=/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+
+
 #>
 	#>
 		#>
@@ -6,7 +12,8 @@
 		#>
 	#>
 #>
-mkdir /ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168
+mkdir $raw_data_folder
+
 
 
 #>
@@ -16,27 +23,41 @@ mkdir /ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-
 		#>
 	#>
 #>
-cd /ebio/abt6_projects7/bacterial_strain_analysis/data/raw_seqDATA/HiSeq3000-Run0168
-for i in $( find /ebio/abt6_sra/years/2020/02_26/ampliconsequencing/illumina_ST-J00101_flowcellA_SampleId*  | grep 'fastq\.gz' )
+cd $raw_data_folder
+for i in $( find "$short_read_archive"/illumina_ST-J00101_flowcellA_SampleId*  | grep 'fastq\.gz' )
 do 
 echo $i
 ln -s $i
 done
 
-#copy actual R1 files to processed data
-mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
-#mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/lane1
-#mkdir -p /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/lane2
-processed=/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+
+#>
+	#>
+		#>
+			#>  #copy actual R1 files to processed data and uncompress
+		#>
+	#>
+#>
+mkdir -p $processed_data_folder
+#mkdir -p $processed_data_folder/lane1
+#mkdir -p $processed_data_folder/lane2
+
 for i in $( ls *_L00*_R1_* )
 do 
     echo $i
     i2=$(sed "s/.gz//g" <(echo $i))
-    zcat $i > "$processed"/$i2
+    zcat $i > "$processed_data_folder"/$i2
 done
 
 
-#Trim off primers
+
+#>
+	#>
+		#>
+			#>  #Trim off primers. Move trimmed fastq to one folder, untrimmed to another
+		#>
+	#>
+#>
 for i in *fastq
 do
     echo $i
@@ -50,7 +71,13 @@ mkdir FASTQ
 mv *.fastq FASTQ
 
 
-#Quality filter
+#>
+	#>
+		#>
+			#>  #Quality filter and move resulting FASTA files to a new folder
+		#>
+	#>
+#>
 cd trimmedFASTQ
 for i in *fastq
 do
@@ -58,10 +85,19 @@ qsub -N "$i" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/ba
 done
 rm *trash
 
-processed=/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168
+
 mkdir "$processed"/FASTA_trimmed
 mv *filtered.fa "$processed"/FASTA_trimmed
 
+
+
+#>
+	#>
+		#>
+			#>  Fix sample names so important information all occurs before the first "_"
+		#>
+	#>
+#>
 
 #put sample, lane, and read1 all in the same block of text
 rename "s/_S/S/" *
@@ -71,6 +107,14 @@ rename "s/_R/R/" *
 
 
 
+#>
+	#>
+		#>
+			#>  Rename each sequence in the fasta file after the name of the fasta file, so we know
+			   from which sample each sequence comes.
+		#>
+	#>
+#>
 #rename each sequence so it reflects the name of the fasta file
 for i in *fastq_filtered.fa
 do
