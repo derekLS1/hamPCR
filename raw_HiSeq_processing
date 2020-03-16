@@ -81,7 +81,7 @@ mv *.fastq FASTQ
 #>
 	#>
 		#>
-			#>  #Quality filter the trimmed data and move resulting FASTA files to a new folder
+			#>  Requires USEARCH. Quality filter the trimmed data and move resulting FASTA files to a new folder
 		#>
 	#>
 #>
@@ -171,12 +171,13 @@ sed -i -e 's/Zotu/Otu/g' "$combined_fasta_basename"_zotus.fa
 #qsub -N "p341" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/makeOTUtable515.sh $fullfasta $otus $tablename
 
 
-#assign taxonomy by USEARCH
+#assign taxonomy by USEARCH, using RDP ref database.
 refdb=/ebio/abt6_projects7/bacterial_strain_analysis/data/16S_db/RDP/rdp_16s_v16.udb 
 usearch=/ebio/abt6_projects7/bacterial_strain_analysis/code/usearch10
 nice -12 $usearch -sintax "$combined_fasta_basename"_zotus.fa -db $refdb -strand both -tabbedout "$combined_fasta_basename".tax -sintax_cutoff 0.8
 
 
+#transfer files to PC for processing/analysis
 scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/Load_HiSeq_20200228.txt /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
 scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/HiSeq0168_all_trimmed.tax  /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
 scp dlundberg@burrito.eb.local:/ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA/HiSeq3000-Run0168/OTUs_trimmed/HiSeq0168_all_trimmed_zotus.fa  /Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168 
