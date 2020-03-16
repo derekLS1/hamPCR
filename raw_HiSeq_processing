@@ -61,7 +61,7 @@ done
 #>
 	#>
 		#>
-			#>  #Trim off primers. Move trimmed fastq to one folder, untrimmed to another
+			#>  #Trim off primers. Uses USEARCH. Move trimmed fastq to one folder, untrimmed to another
 		#>
 	#>
 #>
@@ -81,14 +81,14 @@ mv *.fastq FASTQ
 #>
 	#>
 		#>
-			#>  #Quality filter and move resulting FASTA files to a new folder
+			#>  #Quality filter the trimmed data and move resulting FASTA files to a new folder
 		#>
 	#>
 #>
 cd trimmedFASTQ
 for i in *fastq
 do
-qsub -N "$i" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/MiSeqQualityFilter.sh $i 
+qsub -N "$i" -o $(pwd)/out.txt -e $(pwd)/err.txt -V -cwd /ebio/abt6_projects7/bacterial_strain_analysis/code/AmpliconSeqQualityFilter.sh $i 
 done
 rm *trash
 
