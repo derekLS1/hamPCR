@@ -1,0 +1,69 @@
+Last login: Fri Feb 28 08:44:34 on ttys002
+abt6-derek-mba:~ dlundberg$ combined_fasta_name="HiSeq0168_all_trimmed.fasta"
+abt6-derek-mba:~ dlundberg$ $combined_fasta_name
+-bash: HiSeq0168_all_trimmed.fasta: command not found
+abt6-derek-mba:~ dlundberg$ 
+abt6-derek-mba:~ dlundberg$ burrit
+dlundberg@burrito.eb.local's password: 
+Last login: Thu Feb 27 20:24:42 2020 from 10.1.5.120
+dlundberg@burrito:~$ proj7
+dlundberg@burrito:/ebio/abt6_projects7/bacterial_strain_analysis$ cd /ebio/abt6_projects7/bacterial_strain_analysis/code/HiSeqTrim_LOAD.sh
+-bash: cd: /ebio/abt6_projects7/bacterial_strain_analysis/code/HiSeqTrim_LOAD.sh: Not a directory
+dlundberg@burrito:/ebio/abt6_projects7/bacterial_strain_analysis$ vi /ebio/abt6_projects7/bacterial_strain_analysis/code/HiSeqTrim_LOAD.sh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dlundberg@burrito:/ebio/abt6_projects7/bacterial_strain_analysis$ 
+dlundberg@burrito:/ebio/abt6_projects7/bacterial_strain_analysis$ vi /ebio/abt6_projects7/bacterial_strain_analysis/code/MiSeqQualityFilter.sh 
+
+
+
+
+
+
+
+#!/bin/sh
+#
+#  Reserve 1 CPUs for this job
+#$ -pe parallel 1
+#  Request 10G of RAM
+#$ -l h_vmem=10G
+#
+#  The name shown in the qstat output and in the output file(s). The
+#  default is to use the script name.
+# -N $name
+#
+#  The path used for the standard output stream of the job
+# -o /ebio/abt6_projects7/bacterial_strain_analysis/data/processed_DATA
+#
+# Merge stdout and stderr. The job will create only one output file which
+# contains both the real output and the error messages.
+# -j y
+#
+#  Use /bin/bash to execute this script
+#$ -S /bin/bash
+#
+#  Run job from current working directory
+#$ -cwd
+#
+#  Send email when the job begins, ends, aborts, or is suspended
+##$ -m beas
+
+fq=$1
+usearch=/ebio/abt6_projects7/bacterial_strain_analysis/code/usearch10
+
+echo $fq
+$usearch -fastq_filter "$fq" -fastq_maxee 1.0 -relabel @ -fastaout "$fq"_filtered.fa -fastqout_discarded "$fq"_trash
