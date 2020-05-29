@@ -1,45 +1,77 @@
 
-source("/Users/dlundberg/Documents/abt6/scripts/R/functions/microbiome_custom_functions.R")
+#
+	#
+		#
+#1			# Load (install first if necessary) the following R packages. 
+		#
+	#
+#
 library(vegan)
 library(reshape)
+library(ggplot2)
 library(RColorBrewer)
-library(pheatmap)
-library(viridis)
-library(gplots)
 
-date=format(Sys.Date(), format="%Y%m%d")
 
-LANE="L4_REDO"
+#
+	#
+		#
+#2			# Save the following R scripts and .txt files to your machine. Update the paths:
+		#
+	#
+#
+microbiome_custom_functions="/Users/dlundberg/Documents/abt6/scripts/R/functions/microbiome_custom_functions.R"
+colorscheme="/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R"
+qPCR_pepper_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/qPCR_pepper/qPCR_pepper_data.txt"
+pepper_CFU_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/pepper_growth_curve/pepper_CFU_counts.txt"
 
-#16S
-if(LANE=="L4"){   #
-	otutab="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/Load_HiSeq175_lane4_20200428.txt"
-	tax="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/HiSeq0175_all_trimmed_lane4.tax"
-	metadataT="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/metadata_HiSeq175.txt"
-}
-if(LANE=="L1_REDO"){
+
+
+#
+	#
+		#
+#3			# Download the ASV table, taxonomy table, and sample metadata for run 175 lane 1 and run 175 lane 4. Update the paths below.
+		#	  Chose which lane you want to load by changing the variable "LANE" below. 
+	#
+#
+LANE="L4"
+
+if(LANE=="L1"){
 	otutab="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/R175L1_zOTUtab_20200517.txt"
 	tax="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/R175L1_taxonomy_20200517.tax"  
 	metadataT="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/REDO_metadata.txt"
 }
-if(LANE=="L4_REDO"){
+if(LANE=="L4"){
 	otutab="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/HiSeq0175_lane4_20200517_OTUtabv2.txt"
 	tax="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/HiSeq0175_lane4_20200517_allv2.tax"
 	metadataT="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175_REDO/REDO_metadata.txt"
 }
-if(LANE=="L1meta"){
-	otutab="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/Load_HiSeq175_lane1meta_20200430.txt"
-	tax="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/HiSeq0175_all_trimmed_lane1meta.tax"
-	metadataT="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/metadata_HiSeq175.txt"
-}
-if(LANE=="L1other"){
-	otutab="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/Load_HiSeq175_lane1other_20200430.txt"
-	tax="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/HiSeq0175_all_trimmed_lane1other.tax"
-	metadataT="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/metadata_HiSeq175.txt"
-}
 
 
 
+#
+	#
+		#
+#4			# Update the path for the directory where PDFs of the figures should be saved
+		#
+	#
+#
+
+Figure_Directory="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/TESTDIR"
+
+
+#
+	#
+		#
+#5			# Copy and run all the following code until heading #6
+		#
+	#
+#
+
+#load custom functions
+source(microbiome_custom_functions)
+
+#load current date
+date=format(Sys.Date(), format="%Y%m%d")
 
 #load OTU table
 	read.countTable(file=otutab)->otureads
@@ -50,14 +82,7 @@ if(LANE=="L1other"){
 	metadata[2:nrow(metadata),]->metadata
 
 #fix sample names based on metadata
-if(LANE!="L1_REDO" & LANE!="L4_REDO"){
-	colnames(otureads)=metadata[match(colnames(otureads), metadata[,"name"]),"sample"]
-}
-if(LANE=="L1_REDO" | LANE=="L4_REDO"){
-	print("REDO")
 	colnames(otureads)=metadata[match(colnames(otureads), metadata[,1]),"OTUtableID"]
-}
-
 
 #load taxonomy
 	as.matrix(read.table(file=tax, sep="\t"))->taxonomy
@@ -68,15 +93,6 @@ if(LANE=="L1_REDO" | LANE=="L4_REDO"){
 #keep samples with more than 1000 total reads
 	otureads=otureads[,which(colSums(otureads)>=1000)]
 	
-#find low abundance OTUs to later remove from whole dataset.
-	#minimum_readcount=25
-	#minimum_samples=5
-	#quantitative_OTUs=rownames(otureads)[which(apply(otureads, 1, max)>=minimum_readcount)]
-	#quantitative_OTUs=c("HOST", quantitative_OTUs)
-
-#normalize
-	#otureads=normalize100(otureads)
-
 #remove low abundance rows 0.5% used 20200229 for DISPLAY ONLY. 0.05 good for 16S comparison
 	#otureads=low_abundance(otureads, percent=0.05)
 	
@@ -84,23 +100,30 @@ if(LANE=="L1_REDO" | LANE=="L4_REDO"){
 	order(rowSums(otureads), decreasing=FALSE)->ordering_vector
 		otureads[ordering_vector,]->otureads
 
-#next set specific order
-	toporder="low_abundance"
-	bottomorder=c("Otu3", "HOSTArabidopsisthalianaGiganteaGI502")		
-	otureads=topOrder(otureads, toporder, bottomorder)->currentreads
 
+#
+	#
+		#
+#6			# Generate individual figures
+		#
+	#
+#
+#Search for the figure you want to reproduce. 
+#R175L4, Pepper Infiltration, Figure 6 
+#R175L4, Pepper Growth Curve, Figure 6 
+#R175L4, P. pacificus nematode titration, Figure 5.
 
 
 
 #>
 	#>
 		#>
-			#> #pepper infiltration LANE4
+			#> R175L4, Pepper Infiltration, Figure 6 
 		#>
 	#>
 #>
 #first, load growth curve data
-pepperCFU<-read.table("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/pepper_growth_curve/pepper_CFU_counts.txt")
+pepperCFU<-read.table(pepper_CFU_data)
 as.matrix(pepperCFU[1,])->names(pepperCFU)
 pepperCFU[2:nrow(pepperCFU),]->pepperCFU
 pepperCFU=as.data.frame(pepperCFU)
@@ -119,22 +142,49 @@ CFU_8=infiltrationCFU$CFU_cm2[which(infiltrationCFU$group=="10exp8")]
 CFU_infiltration=c(CFU_4, CFU_5, CFU_6, CFU_7, CFU_8)
 
 #next load qPCR data
-inqPCR<-read.table("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/qPCR_pepper/qPCR_inf.txt")
-qPCR_4=inqPCR[,2][which(inqPCR[,3]=="in10e4")]
-qPCR_5=inqPCR[,2][which(inqPCR[,3]=="in10e5")]
-qPCR_6=inqPCR[,2][which(inqPCR[,3]=="in10e6")]
-qPCR_7=inqPCR[,2][which(inqPCR[,3]=="in10e7")]
-qPCR_8=inqPCR[,2][which(inqPCR[,3]=="in10e8")]
-qPCR_in=c(qPCR_4, qPCR_5, qPCR_6, qPCR_7, qPCR_8)
+pepM<-read.table(qPCR_pepper_data)
+	names_pepM=as.matrix(pepM[1,])
+	pepM=pepM[2:nrow(pepM),]
+	names(pepM)=names_pepM
+	#go thru and calculate new table from the Cq values that is X / U
+	samples=unique(as.matrix(pepM$sample))
+	pepM$cq=as.numeric(as.matrix(pepM$cq))
+	pepM$sample=as.matrix(pepM$sample)
+	pepM$primer=as.matrix(pepM$primer)
+	load_table=matrix(ncol=3, nrow=length(samples))
+	exponential=2
+	for(i in setdiff(1:length(samples), c(0))){
+		#print(which(pepM$sample==samples[i]))
+		X=pepM[which(pepM$sample==samples[i] & pepM$primer=="xopQ"),]
+		U=pepM[which(pepM$sample==samples[i] & pepM$primer=="UBI3"),]
+		experiment=as.matrix(pepM$experiment[which(pepM$sample==samples[i] & pepM$primer=="UBI3")][1])
+		load_table[i,]=c(experiment, samples[i], (exponential^(-mean(X$cq))) / (exponential^(-mean(U$cq))))
+	}
+	inqPCR_ratio=as.data.frame(load_table[which(load_table[,1]=="infiltration"),c(2, 3)])
+	names(inqPCR_ratio)=c("sample_name", "ratio")
+	inqPCR_ratio$ratio=as.numeric(as.matrix(inqPCR_ratio$ratio))
+	
+	gsub("^", "in", inqPCR_ratio$sample_name)->inqPCR_ratio$sample_category
+	gsub("10inf", "10e", inqPCR_ratio$sample_category)->inqPCR_ratio$sample_category
+	gsub("\\..*", "", inqPCR_ratio$sample_category)->inqPCR_ratio$sample_category
+	gsub(".*\\.", "", inqPCR_ratio$sample_name)->inqPCR_ratio$replicate
+	inqPCR_ratio$sample_category=factor(inqPCR_ratio$sample_category, levels=c("in10e4","in10e5","in10e6","in10e7","in10e8"))
+	
+	inqPCR_ratio=inqPCR_ratio[order(inqPCR_ratio$replicate),]
+	inf4=grep("e4", inqPCR_ratio$sample_category)
+	inf5=grep("e5", inqPCR_ratio$sample_category)
+	inf6=grep("e6", inqPCR_ratio$sample_category)
+	inf7=grep("e7", inqPCR_ratio$sample_category)
+	inf8=grep("e8", inqPCR_ratio$sample_category)
+	inqPCR_ratio=inqPCR_ratio[c(inf4, inf5, inf6, inf7, inf8),]
 
-
-#pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq168/LOAD_HiSeq_", current, "_untrimmed", date, ".pdf", sep="", collapse=""), width = 3, height = 2, useDingbats=FALSE)
-#ggplot(histDL, aes(x=histDL$group, y=histDL$CFU_cm2, group=histDL$group, color=histDL$group)) +
-#  geom_line() + geom_boxplot(color="#444444") + geom_jitter(size=2, shape=16, position=position_jitter(0.2)) +
-#  theme_minimal() + theme(axis.text.x = element_text(size=5),axis.text.y = element_text(size=5)) +  
-#  theme(legend.position="none") + 
-#  scale_y_continuous(name = "log10 CFU / cm2", breaks = 0:9, labels = 0:9, limits = c(0,9)) + 
-#  scale_color_manual(values=rep("#000000", 20)) 
+	inqPCR_ratio=as.matrix(inqPCR_ratio)
+	qPCR_4=inqPCR_ratio[,"ratio"][which(inqPCR_ratio[,"sample_category"]=="in10e4")]
+	qPCR_5=inqPCR_ratio[,"ratio"][which(inqPCR_ratio[,"sample_category"]=="in10e5")]
+	qPCR_6=inqPCR_ratio[,"ratio"][which(inqPCR_ratio[,"sample_category"]=="in10e6")]
+	qPCR_7=inqPCR_ratio[,"ratio"][which(inqPCR_ratio[,"sample_category"]=="in10e7")]
+	qPCR_8=inqPCR_ratio[,"ratio"][which(inqPCR_ratio[,"sample_category"]=="in10e8")]
+	qPCR_in=c(qPCR_4, qPCR_5, qPCR_6, qPCR_7, qPCR_8)
 
 
 InfiltRep1=grep("S61xaltV4CaGIxin10e4.1|S62xaltV4CaGIxin10e5.1|S63xaltV4CaGIxin10e6.1|S64xaltV4CaGIxin10e7.1|S65xaltV4CaGIxin10e8.1", colnames(otureads), value=TRUE)
@@ -150,19 +200,10 @@ InfiltReps=InfiltReps[which(rowSums(InfiltReps)>0),]
 InfiltReps=normalize100(InfiltReps)
 
 #FIND KEY OTUS
-if(LANE=="L4"){
-	HOST=colSums(matrix_format(InfiltReps[grep("Otu4$|Otu12890$", rownames(InfiltReps)),]))
-	InfiltReps=InfiltReps[setdiff(1:nrow(InfiltReps), grep("Otu4$|Otu12890$", rownames(InfiltReps))),]
-	Xe8510=InfiltReps["Otu1",]
-	InfiltReps=InfiltReps[setdiff(rownames(InfiltReps), c("Otu1")),]
-}
-
-if(LANE=="L4_REDO"){
 	HOST=colSums(matrix_format(InfiltReps[grep("Otu4$|Otu12886$", rownames(InfiltReps)),]))
 	InfiltReps=InfiltReps[setdiff(1:nrow(InfiltReps), grep("Otu4$|Otu12886$", rownames(InfiltReps))),]
 	Xe8510=InfiltReps["Otu1",]
 	InfiltReps=InfiltReps[setdiff(rownames(InfiltReps), c("Otu1")),]
-}
 
 #convert to family, add host afterwards
 InfiltReps<-filter_by_taxonomyic_level(countTable=InfiltReps, taxonomy=taxonomy, keywords=c("c"), last_filter=TRUE)
@@ -171,7 +212,6 @@ InfiltReps=InfiltReps[apply(InfiltReps, 1, median)>=0.1,]
 
 #add back host
 InfiltReps=rbind(InfiltReps, Xe8510, HOST)
-
 
 order(rowSums(InfiltReps), decreasing=FALSE)->ordering_vector
 		InfiltReps[ordering_vector,]->InfiltReps
@@ -194,7 +234,7 @@ histDL$sample_category=factor(histDL$sample_category, levels=InfiltLevels)
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -211,7 +251,7 @@ ggplot(histDL, aes(x=histDL$sample_category, y=histDL$abundance, group=histDL$or
   theme(legend.position="none") 
 #dev.off() 
 
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperInfiltBact_logReAb_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
+#pdf(paste(Figure_Directory,"/Pepper_Infiltration_logReAb_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
 ggplot(histDL, aes(x=sample_category, y=log10(abundance), group=org_rep, color=organism)) +
   geom_line() + geom_point(size=2) + scale_color_manual(values=histDL$colors) + 
   theme_classic() + theme(axis.text.x = element_text(size=5),axis.text.y = element_text(size=5)) +  
@@ -221,7 +261,7 @@ ggplot(histDL, aes(x=sample_category, y=log10(abundance), group=org_rep, color=o
 	theme(axis.ticks = element_line(colour = 'black')) + 
 	   	scale_x_discrete(name = "injection") + 
   scale_y_continuous(name = "RA (%)", breaks=c(-3:2), labels=10^c(-3:2), limits = c(-3,2)) #+ 
- dev.off()
+ #dev.off()
  	 
 
 InfiltReps["HOST", grep("in10e8",colnames(InfiltReps))]
@@ -259,7 +299,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -273,9 +313,9 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 #histDL2=histDL[grep("Oxalobacteraceae|Sphingomonadaceae|Pseudomonadaceae|Streptomycetaceae|Nocardioidaceae|Chitinophagaceae|Xanthomonadaceae|Xe8510", histDL$organism, invert=FALSE),]
 histDL2=histDL[grep("Actinobacteria|Gammaproteobacteria|Betaproteobacteria|Alphaproteobacteria|Xe8510", histDL$organism, invert=FALSE),]
 histDL2$organism=factor(histDL2$organism, levels=unique(as.character(histDL2$organism)))
-log10(histDL2$abundance+.00000000000001)->histDL2$abundance
+log10(as.numeric(as.matrix(histDL2$abundance))+.00000000000001)->histDL2$abundance
 date=format(Sys.Date(), format="%Y%m%d")
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperInfiltBact_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory, "/Pepper_Infiltration_hamPCR_boxplot_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
 ggplot(histDL2, aes(fill=organism, y=abundance, x=sample_category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.5, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=organism), size = 1.5, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.1, dodge=.9)) +
@@ -292,6 +332,7 @@ dev.off()
 #boxplot ONLY CFU
 melt(InfiltReps_load)->histDL
 c("organism", "sample_name", "abundance")->names(histDL)
+histDL$abundance=as.numeric(as.matrix(histDL$abundance))
 gsub(".*xin", "in", histDL$sample_name)->histDL$sample_category
 	gsub("\\..*", "", histDL$sample_category)->histDL$sample_category
 gsub(".*\\.", "", histDL$sample_name)->histDL$replicate
@@ -302,7 +343,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"lightblue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -356,7 +397,7 @@ histDL3$abundance[which(histDL3$organism=="qPCR_in")]<-(slope*histDL3$abundance[
 
 
 date=format(Sys.Date(), format="%Y%m%d")
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperInfiltCFU_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory,"/Pepper_Infiltration_hamPCR_CFU_qPCR_comparison_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
 ggplot(histDL3, aes(fill=organism, y=abundance, x=sample_category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.75, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=organism), size = 1.5, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.1, dodge=.9)) +
@@ -368,67 +409,6 @@ ggplot(histDL3, aes(fill=organism, y=abundance, x=sample_category)) +
  		scale_y_continuous(name = "log10 abundance", breaks=c(0:9), labels=c(0:9), limits = c(0,9)) 
 dev.off()
 
-#line plots only
-#melt(InfiltReps_load)->histDL
-#c("organism", "sample_name", "abundance")->names(histDL)
-#gsub(".*xin", "in", histDL$sample_name)->histDL$sample_category
-#	gsub("\\..*", "", histDL$sample_category)->histDL$sample_category
-#gsub(".*\\.", "", histDL$sample_name)->histDL$replicate
-#paste(histDL$replicate, histDL$organism, sep="_")->histDL$org_rep
-#histDL$sample_category=factor(histDL$sample_category, levels=InfiltLevels)
-#histDL[histDL$organism!="HOST",]->histDL
-#histDL$organism=factor(histDL$organism, levels=as.character(c("CFU_infiltration", "Xanthomonadaceae","Pseudomonadaceae","Chitinophagaceae","Sphingomonadaceae","Enterobacteriaceae")))
-#log10(histDL$abundance)->histDL$abundance
-#	rownames(InfiltReps_load)->taxa_color_pairs
-#	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
-#	#ALPHA_COLUMN_IN_COLORSLIST=7
-#	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
-#	taxa_color_pairs[match(histDL$organism, taxa_color_pairs[,1]),2]->histDL$colors
-#
-#
-##pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/MiSeq_1/Pepper_infiltration_lines_", date, ".pdf", sep="", collapse=""), width = 5, height = 3, useDingbats=FALSE)
-#ggplot(histDL, aes(x=histDL$sample_category, y=histDL$abundance, group=histDL$org_rep, color=histDL$organism)) +
-#  geom_line() + geom_point(size=0) + scale_color_manual(values=histDL$colors) + 
-#  theme_minimal() + theme(axis.text.x = element_text(size=5),axis.text.y = element_text(size=5)) +  
-#  theme(legend.position="none")  +
-#   scale_x_discrete(name = "injection") + 
-# 	scale_y_continuous(name = "log10 abundance", breaks=c(0:7), limits = c(0,7)) +
-#	theme(panel.grid.minor = element_line(size = 0.15), panel.grid.major = element_line(size = .15)) + 
-#	theme(panel.grid.minor = element_line(colour = "black"), panel.grid.major = element_line(colour = "black")) + 
-#	theme(panel.grid.minor = element_blank()) 
-##dev.off()
-#
-#
-
-#correlate growth curve vs. 16S data  
-melt(InfiltReps_load)->histDL
-c("organism", "sample_name", "abundance")->names(histDL)
-gsub(".*xin", "in", histDL$sample_name)->histDL$sample_category
-	gsub("\\..*", "", histDL$sample_category)->histDL$sample_category
-gsub(".*\\.", "", histDL$sample_name)->histDL$replicate
-paste(histDL$replicate, histDL$organism, sep="_")->histDL$org_rep
-histDL$sample_category=factor(histDL$sample_category, levels=InfiltLevels)
-histDL[histDL$organism!="HOST",]->histDL
-histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organism)))
-
-histDL3=histDL[grep("CFU_infiltration|Xe8510", histDL$organism),]
-histDL3$organism=factor(histDL3$organism, levels=as.character(c("Xe8510","CFU_infiltration")))
-correlation=cor(log10(InfiltReps_load["CFU_infiltration",]), log10(InfiltReps_load["Xe8510",]))^2
-histDL3$X=log10(histDL3$abundance[which(histDL3$organism=="Xe8510")])
-histDL3$Y=log10(histDL3$abundance[which(histDL3$organism=="CFU_infiltration")])
-	ggplot(histDL3, aes(x=X, y=Y)) + geom_point(size=1.5, alpha=0.2) + 
-			theme_minimal() + theme(axis.text.x = element_text(size=5),axis.text.y = element_text(size=5)) +  
-			theme(legend.position="none") + 
-			coord_fixed(ratio=1/1) +  
-				theme(panel.grid.minor = element_line(size = 0.15), panel.grid.major = element_line(size = .15)) + 
-			theme(panel.grid.minor = element_line(colour = "black"), panel.grid.major = element_line(colour = "black")) + 
-			theme(panel.grid.minor = element_blank()) +
-			geom_smooth(method='lm', size=0.5, se = FALSE) +
-			scale_x_continuous(name = "a + b", breaks = c(-3:3), labels = c(-3:3), limits = c(-3,3)) + 
-			scale_y_continuous(name = "c + d", breaks = c(2:7), labels = c(2:7), limits = c(2,7)) 
-	# 
-			#annotate(geom="text", size=3, x = 16^(1/exponent), y = 36^(1/exponent), label = deparse(bquote(R^2~"="~.(correlation))), parse=T) +
-			#annotate(geom="text", size=3, x = 16^(1/exponent), y = 24^(1/exponent), label = deparse(paste("K-S = ", round(ks[[2]],3), sep="")), parse=T) 
 
 
 e4=as.vector(InfiltReps_load[grep("Actinobacteria|Gammaproteobacteria|Betaproteobacteria|Alphaproteobacteria", rownames(InfiltReps_load)),grep(".*10e4.*",colnames(InfiltReps_load))])
@@ -439,8 +419,9 @@ e8=as.vector(InfiltReps_load[grep("Actinobacteria|Gammaproteobacteria|Betaproteo
 
 all=melt(rbind(e4, e5, e6, e7, e8))
 names(all)=c("category", "b", "abundance")
+all$abundance=as.numeric(as.matrix(all$abundance))
 
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperINF_increaseCommensal_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory,"/PepperINF_increaseCommensal_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
 ggplot(all, aes(y=log10(abundance), x=category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.5, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=category), size = 2.5, color="black", alpha=0.3, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.9, dodge=.9)) +
@@ -452,6 +433,7 @@ ggplot(all, aes(y=log10(abundance), x=category)) +
   		scale_y_continuous(name = "log10 abundance", breaks=c(-4:0), labels=c(-4:0), limits = c(-4,.5)) 
 dev.off()
 
+
 wilcox.test(e8, e4, "greater")
 
 
@@ -461,12 +443,12 @@ wilcox.test(e8, e4, "greater")
 #>
 	#>
 		#>
-			#> #pepper growth curve Lane 4
+			#> #R175L4, Pepper Growth Curve, Figure 6 
 		#>
 	#>
 #>
 #first, load growth curve data
-pepperCFU<-read.table("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/pepper_growth_curve/pepper_CFU_counts.txt")
+pepperCFU<-read.table(pepper_CFU_data)
 as.matrix(pepperCFU[1,])->names(pepperCFU)
 pepperCFU[2:nrow(pepperCFU),]->pepperCFU
 pepperCFU=as.data.frame(pepperCFU)
@@ -485,13 +467,48 @@ CFU_gc=c(CFU_Rep1, CFU_Rep2, CFU_Rep3, CFU_Rep4, CFU_Rep5, CFU_Rep6)
 
 
 #next load qPCR data
-gcqPCR<-read.table("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/qPCR_pepper/qPCR_growthcurve.txt")
-qPCR_Rep1=gcqPCR[,2][which(gcqPCR[,4]==1)]
-qPCR_Rep2=gcqPCR[,2][which(gcqPCR[,4]==2)]
-qPCR_Rep3=gcqPCR[,2][which(gcqPCR[,4]==3)]
-qPCR_Rep4=gcqPCR[,2][which(gcqPCR[,4]==4)]
-qPCR_Rep5=gcqPCR[,2][which(gcqPCR[,4]==5)]
-qPCR_Rep6=gcqPCR[,2][which(gcqPCR[,4]==6)]
+pepM<-read.table(qPCR_pepper_data)
+	names_pepM=as.matrix(pepM[1,])
+	pepM=pepM[2:nrow(pepM),]
+	names(pepM)=names_pepM
+	#go thru and calculate new table from the Cq values that is X / U
+	samples=unique(as.matrix(pepM$sample))
+	pepM$cq=as.numeric(as.matrix(pepM$cq))
+	pepM$sample=as.matrix(pepM$sample)
+	pepM$primer=as.matrix(pepM$primer)
+	load_table=matrix(ncol=3, nrow=length(samples))
+	exponential=2
+	for(i in setdiff(1:length(samples), c(0))){
+		#print(which(pepM$sample==samples[i]))
+		X=pepM[which(pepM$sample==samples[i] & pepM$primer=="xopQ"),]
+		U=pepM[which(pepM$sample==samples[i] & pepM$primer=="UBI3"),]
+		experiment=as.matrix(pepM$experiment[which(pepM$sample==samples[i] & pepM$primer=="UBI3")][1])
+		load_table[i,]=c(experiment, samples[i], (exponential^(-mean(X$cq))) / (exponential^(-mean(U$cq))))
+	}
+	gcqPCR_ratio=as.data.frame(load_table[which(load_table[,1]=="growth_curve"),c(2, 3)])
+	names(gcqPCR_ratio)=c("sample_name", "ratio")
+	gcqPCR_ratio$ratio=as.numeric(as.matrix(gcqPCR_ratio$ratio))
+	
+	gsub(".*xgc", "gc", gcqPCR_ratio$sample_name)->gcqPCR_ratio$sample_category
+	gsub("\\..*", "", gcqPCR_ratio$sample_category)->gcqPCR_ratio$sample_category
+	gcqPCR_ratio$sample_category=factor(gcqPCR_ratio$sample_category, levels=c("0dpi", "2dpi", "4dpi", "7dpi", "9dpi", "11dpi"))
+	gsub(".*\\.", "", gcqPCR_ratio$sample_name)->gcqPCR_ratio$replicate
+	
+	gcqPCR_ratio=gcqPCR_ratio[order(gcqPCR_ratio$replicate),]
+	dpi0=grep("0dpi", gcqPCR_ratio$sample_category)
+	dpi2=grep("2dpi", gcqPCR_ratio$sample_category)
+	dpi4=grep("4dpi", gcqPCR_ratio$sample_category)
+	dpi7=grep("7dpi", gcqPCR_ratio$sample_category)
+	dpi9=grep("9dpi", gcqPCR_ratio$sample_category)
+	dpi11=grep("11dpi", gcqPCR_ratio$sample_category)
+	gcqPCR_ratio=gcqPCR_ratio[c(dpi0, dpi2, dpi4, dpi7, dpi9, dpi11),]
+
+qPCR_Rep1=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==1)]
+qPCR_Rep2=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==2)]
+qPCR_Rep3=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==3)]
+qPCR_Rep4=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==4)]
+qPCR_Rep5=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==5)]
+qPCR_Rep6=gcqPCR_ratio[,"ratio"][which(gcqPCR_ratio[,"replicate"]==6)]
 qPCR_gc=c(qPCR_Rep1, qPCR_Rep2, qPCR_Rep3, qPCR_Rep4, qPCR_Rep5, qPCR_Rep6)
 
 
@@ -558,7 +575,7 @@ histDL$sample_category=factor(histDL$sample_category, levels=gcLevels)
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -573,7 +590,7 @@ ggplot(histDL, aes(x=sample_category, y=abundance, group=org_rep, color=organism
   theme(legend.position="none") 
 #dev.off()  
 
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperGCBact_logReAb_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
+#pdf(paste(Figure_Directory, "/PepperGCBact_logReAb_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
 ggplot(histDL, aes(x=sample_category, y=log10(abundance), group=org_rep, color=organism)) +
   geom_line() + geom_point(size=2) + scale_color_manual(values=histDL$colors) + 
   theme_classic() + theme(axis.text.x = element_text(size=5),axis.text.y = element_text(size=5)) +  
@@ -583,7 +600,7 @@ ggplot(histDL, aes(x=sample_category, y=log10(abundance), group=org_rep, color=o
 	theme(axis.ticks = element_line(colour = 'black')) + 
 	   	scale_x_discrete(name = "injection") + 
   scale_y_continuous(name = "RA (%)", breaks=c(-3:2), labels=10^c(-3:2), limits = c(-3,2)) #+ 
- dev.off()
+ #dev.off()
  	
  		
 #dev.off()  
@@ -624,7 +641,7 @@ histDL$organism=factor(histDL$organism, levels=unique(as.character(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"lightblue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="CFU_gc"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -641,7 +658,7 @@ histDL2=histDL[grep("Actinobacteria|Gammaproteobacteria|Betaproteobacteria|Alpha
 histDL2$organism=factor(histDL2$organism, levels=unique(as.character(histDL2$organism)))
 log10(histDL2$abundance+.00000000000001)->histDL2$abundance
 date=format(Sys.Date(), format="%Y%m%d")
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperGCBact_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory, "/PepperGCBact_", date, ".pdf", sep="", collapse=""), width = 7, height = 4, useDingbats=FALSE)
 ggplot(histDL2, aes(fill=organism, y=abundance, x=sample_category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.5, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=organism), size = 1.5, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.1, dodge=.9)) +
@@ -703,7 +720,7 @@ histDL3$abundance[which(histDL3$organism=="qPCR_gc")]<-(slope*histDL3$abundance[
 #####################################
 
 date=format(Sys.Date(), format="%Y%m%d")
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperGC_CFUcomp_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory, "/PepperGC_CFUcomp_", date, ".pdf", sep="", collapse=""), width = 4, height = 4, useDingbats=FALSE)
 ggplot(histDL3, aes(fill=organism, y=abundance, x=sample_category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.75, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=organism), size = 1.0, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.1, dodge=.9)) +
@@ -731,7 +748,7 @@ wilcox.test(dpi7, dpi0, "greater")
 all=melt(rbind(dpi0, dpi2, dpi4))
 names(all)=c("category", "b", "abundance")
 
-pdf(paste("/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/HiSeq175/PepperGC_increaseCommensal_", date, ".pdf", sep="", collapse=""), width = 3, height = 4, useDingbats=FALSE)
+pdf(paste(Figure_Directory, "/PepperGC_increaseCommensal_", date, ".pdf", sep="", collapse=""), width = 3, height = 4, useDingbats=FALSE)
 ggplot(all, aes(y=log10(abundance), x=category)) + 
    	 	geom_boxplot(outlier.size=0, outlier.shape=NA, alpha=0.5, width=.7, position=position_dodge(.9)) + 
    	 	geom_point(aes(fill=category), size = 2.5, color="black", alpha=0.3, stroke=0.1, shape = 21, position = position_jitterdodge(jitter.width=0.9, dodge=.9)) +
@@ -749,7 +766,7 @@ dev.off()
 #>
 	#>
 		#>
-			#> #worm titration LANE 4
+			#> #R175L4, P. pacificus nematode titration, Figure 5.
 		#>
 	#>
 #>  	
@@ -811,7 +828,7 @@ histDL[histDL$organism!="SUMS",]->histDL
 
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"#fdba17"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Lysinibacillus"),2]
 	"#3e78bd"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Pseudomonas"),2]
@@ -910,7 +927,7 @@ if(Yaxis=="linear"){
 
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="SUMS"),2]
 	"#fdba17"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Lysinibacillus"),2]
 	"#3e78bd"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Pseudomonas"),2]
@@ -1024,7 +1041,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1126,7 +1143,7 @@ if(Yaxis=="linear"){
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1275,7 +1292,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1521,7 +1538,7 @@ histDL$org_rep=factor(histDL$org_rep, levels=unique(histDL$org_rep))
 	rownames(AtMeta)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	taxa_color_pairs[match(levels(histDL$organism), taxa_color_pairs[,1]),2]->histDL$colors
 	
@@ -1643,7 +1660,7 @@ histDL$organism=factor(histDL$organism, levels=unique(as.character(histDL$organi
 	rownames(AtMeta)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"gray"->taxa_color_pairs[which(taxa_color_pairs[,1]=="low_abundance"),2]
 	"#FFBC00"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Caulobacteraceae"),2]
@@ -1745,7 +1762,7 @@ histDL3=histDL3[setdiff(1:nrow(histDL3), zeros),]
 
 COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 ALPHA_COLUMN_IN_COLORSLIST=7
-source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+source(colorscheme)
 	"gray"->taxa_color_pairs[which(taxa_color_pairs[,1]=="low_abundance"),2]
 	"#FFBC00"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Caulobacteraceae"),2]
 	"#f43df0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Flavobacteriaceae"),2]
@@ -1845,7 +1862,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1951,7 +1968,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -2026,7 +2043,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source("/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R")
+	source(colorscheme)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
