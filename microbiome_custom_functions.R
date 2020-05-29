@@ -639,6 +639,7 @@ colorscheme<-function(color_key){
 	for(r in 1:nrow(colorslist)){
 		taxa_color_pairs[which(taxa_color_pairs[,1]==colorslist[r,2]),3]<-colorslist[r,ALPHA_COLUMN_IN_COLORSLIST]
 	}
+	return(taxa_color_pairs)
 }
 	
 	
