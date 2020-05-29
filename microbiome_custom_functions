@@ -617,7 +617,7 @@ colorscheme<-function(color_key){
 	#DerekPalette<-c("#ffff00","#000000","#ffff00","#f922b9","#000000","#ffff00","#f922b9","#32fff4","#1F78B4","#FB9A99","#FDBF6F","#E31A1C","#6A3D9A","#CAB2D6","#FF7F00","#FFFF99","#A6CEE3")
 	DerekPalette<-c("#f922b9","#32fff4","#1F78B4","#FB9A99","#FDBF6F","#E31A1C","#6A3D9A","#CAB2D6","#FF7F00","#FFFF99","#A6CEE3")
 		
-	colorslist=color_key
+	colorslist=read.table(color_key,  sep="\t",comment.char="")
 	as.matrix(colorslist)->colorslist
 	colorslist[1,]->colnames(colorslist)
 	
