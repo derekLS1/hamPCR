@@ -19,11 +19,10 @@ library(RColorBrewer)
 		#
 	#
 #
-microbiome_custom_functions="/Users/dlundberg/Documents/abt6/scripts/R/functions/microbiome_custom_functions.R"
-colorscheme="/Users/dlundberg/Documents/abt6/Regalado2017/family_colorscheme.R"
-qPCR_pepper_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/qPCR_pepper/qPCR_pepper_data.txt"
-pepper_CFU_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/pepper_growth_curve/pepper_CFU_counts.txt"
-
+microbiome_custom_functions="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/TESTDIR/microbiome_custom_functions.R"
+color_key="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/TESTDIR/color_key.txt"
+qPCR_pepper_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/TESTDIR/qPCR_pepper_data.txt"
+pepper_CFU_data="/Users/dlundberg/Documents/abt6/Pratchaya/PCR_Load_Quantification/TESTDIR/pepper_CFU_counts.txt"
 
 
 #
@@ -234,7 +233,7 @@ histDL$sample_category=factor(histDL$sample_category, levels=InfiltLevels)
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -299,7 +298,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -343,7 +342,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"lightblue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -575,7 +574,7 @@ histDL$sample_category=factor(histDL$sample_category, levels=gcLevels)
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -641,7 +640,7 @@ histDL$organism=factor(histDL$organism, levels=unique(as.character(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"blue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Xe8510"),2]
 	"lightblue"->taxa_color_pairs[which(taxa_color_pairs[,1]=="CFU_gc"),2]
 	"darkgreen"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Nocardioidaceae"),2]
@@ -828,7 +827,7 @@ histDL[histDL$organism!="SUMS",]->histDL
 
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
-	source(colorscheme)
+	colorscheme(color_key)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"#fdba17"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Lysinibacillus"),2]
 	"#3e78bd"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Pseudomonas"),2]
@@ -927,7 +926,7 @@ if(Yaxis=="linear"){
 
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="SUMS"),2]
 	"#fdba17"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Lysinibacillus"),2]
 	"#3e78bd"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Pseudomonas"),2]
@@ -1041,7 +1040,7 @@ histDL$organism=factor(histDL$organism, levels=as.character(unique(histDL$organi
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1143,7 +1142,7 @@ if(Yaxis=="linear"){
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1292,7 +1291,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	levels(histDL$organism)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"#5cffc0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1538,7 +1537,7 @@ histDL$org_rep=factor(histDL$org_rep, levels=unique(histDL$org_rep))
 	rownames(AtMeta)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	taxa_color_pairs[match(levels(histDL$organism), taxa_color_pairs[,1]),2]->histDL$colors
 	
@@ -1660,7 +1659,7 @@ histDL$organism=factor(histDL$organism, levels=unique(as.character(histDL$organi
 	rownames(AtMeta)->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
 	"gray"->taxa_color_pairs[which(taxa_color_pairs[,1]=="low_abundance"),2]
 	"#FFBC00"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Caulobacteraceae"),2]
@@ -1762,7 +1761,7 @@ histDL3=histDL3[setdiff(1:nrow(histDL3), zeros),]
 
 COLUMN_IN_COLORSLIST=3    # 3 is colors, 4 is black / white / green / purple
 ALPHA_COLUMN_IN_COLORSLIST=7
-source(colorscheme)
+colorscheme(color_key)
 	"gray"->taxa_color_pairs[which(taxa_color_pairs[,1]=="low_abundance"),2]
 	"#FFBC00"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Caulobacteraceae"),2]
 	"#f43df0"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Flavobacteriaceae"),2]
@@ -1862,7 +1861,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -1968,7 +1967,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
@@ -2043,7 +2042,7 @@ histDL$sample_name=factor(histDL$sample_name, levels=unique(histDL$sample_name))
 	unique(as.matrix(histDL$organism))->taxa_color_pairs
 	COLUMN_IN_COLORSLIST=10    # 3 is colors, 4 is black / white / green / purple
 	#ALPHA_COLUMN_IN_COLORSLIST=7
-	source(colorscheme)
+	colorscheme(color_key)
 	"black"->taxa_color_pairs[which(taxa_color_pairs[,1]=="Hpa"),2]
 	"yellow"->taxa_color_pairs[which(taxa_color_pairs[,1]=="DC3000"),2]
 	"green"->taxa_color_pairs[which(taxa_color_pairs[,1]=="HOST"),2]
