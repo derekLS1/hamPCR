@@ -257,6 +257,25 @@ low_abundance<-function(readtable, percent=5, return_low_abundance_rows=FALSE){
 	
 }
 
+divide_by_host=function(tab, remove_host=FALSE, load_threshold=3){
+	hostrows=grep("HOST", rownames(tab))
+	if(length(hostrows)==1){
+		HOST=tab[hostrows,]
+		tab=tab[setdiff(1:nrow(tab), hostrows),]
+	}
+	if(length(hostrows)>1){
+		HOST=colSums(tab[hostrows,])
+		tab=tab[setdiff(1:nrow(tab), hostrows),]
+	}
+	tab=rbind(tab, HOST)
+	tab["HOST", which(tab["HOST",]==0)]<-NA
+	colnames(tab)[which(tab["HOST",]<=load_threshold)]=paste(colnames(tab)[which(tab["HOST",]<=3)], "_HighLoad", sep="")
+	for(c in 1:ncol(tab)){
+		tab[,c]/tab["HOST",c]->tab[,c]
+	}
+	return(tab)
+}
+
 
 topOrder<-function(countTable, topOrder, bottomOrder){
 	match(topOrder,rownames(countTable), nomatch=0)->top
